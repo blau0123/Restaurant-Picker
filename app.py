@@ -1,4 +1,5 @@
 import tkinter as tk
+from random import randrange
 from api import API_KEY
 import requests
 
@@ -14,10 +15,14 @@ def get_restaurants():
         params['radius'] = radius
     if term != '':
         params['term'] = term
+    else:
+        # If no search term (like sushi, italian), just search for restaurants in general
+        params['term'] = 'Restaurant'
+
     endpoint = 'https://api.yelp.com/v3/businesses/search'
     resp = requests.get(url=endpoint, headers=headers, params=params)
     data = resp.json()
-    restaurants = data['businesses']
+    return data['businesses']
 
 # Give general information about the program
 def main_page(root):
@@ -65,20 +70,25 @@ def choices_page(root):
     input_box.pack()
     next_btn.pack()
 
-def results_page(root):
+def results_page(root, results, result):
     title_label = tk.Label(root, text='Results')
     title_label.pack()
 
-    restaurants = get_restaurants()
-    for r in restaurants:
+    result_label = tk.Label(root, text=result['name'])
+    redo_btn = tk.Button(root, text='New Choice', command=lambda: get_new_restaurant(root, results), padx=30, pady=5)
+
+    result_label.pack()
+    redo_btn.pack()
+
+    '''
+    for r in results:
         tk.Label(root, text=r['name']).pack()
+    '''
 
-def get_new_restaurant():
-    global root
-
+def get_new_restaurant(root, restaurants):
     clear_window(root)
-    rand_restaurant = restaurants[0]
-    results_page(root)
+    rand_restaurant = restaurants[randrange(len(restaurants))]
+    results_page(root, restaurants, rand_restaurant)
 
 # Handles finding input errors, such as leaving required inputs blank
 def handle_errors(values):
@@ -126,7 +136,10 @@ def page_changer(values):
             curr_page = 2
     elif curr_page == 2:
         term = values[0]
-        results_page(root)
+        # Have all search queries, so find restaurants then render results page with it
+        restaurants = get_restaurants()
+        get_new_restaurant(root, restaurants)
+        # results_page(root, rand_result)
 
 # Create the GUI root widget
 root = tk.Tk()
